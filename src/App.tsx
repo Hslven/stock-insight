@@ -1,20 +1,30 @@
 import { Route, Routes } from "react-router-dom";
+import { Suspense } from "react";
 
-import IndexPage from "@/pages/index";
-import NewsPage from "@/pages/news/news-page";
-import PricingPage from "@/pages/pricing";
-import BlogPage from "@/pages/blog";
-import AboutPage from "@/pages/about";
+import { DefaultLayout } from "@/layouts/default";
+import { siteConfig, type SiteConfig } from "@/config/site";
 
 function App() {
   return (
-    <Routes>
-      <Route element={<IndexPage />} path="/" />
-      <Route element={<NewsPage />} path="/news" />
-      <Route element={<PricingPage />} path="/pricing" />
-      <Route element={<BlogPage />} path="/blog" />
-      <Route element={<AboutPage />} path="/about" />
-    </Routes>
+    <DefaultLayout>
+      <Routes>
+        {siteConfig.navItems.map((item: SiteConfig["navItems"][number]) => {
+          const Component = item.component;
+
+          return (
+            <Route
+              key={item.label}
+              element={
+                <Suspense>
+                  <Component />
+                </Suspense>
+              }
+              path={item.href}
+            />
+          );
+        })}
+      </Routes>
+    </DefaultLayout>
   );
 }
 

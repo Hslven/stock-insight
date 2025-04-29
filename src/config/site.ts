@@ -1,3 +1,26 @@
+import React from "react";
+
+const components: Record<
+  string,
+  React.LazyExoticComponent<React.ComponentType<any>>
+> = {
+  IndexPage: React.lazy(() => import("@/pages/trading/trading-page")),
+  NewsPage: React.lazy(() => import("@/pages/news/news-page")),
+  PricingPage: React.lazy(() => import("@/pages/pricing")),
+  BlogPage: React.lazy(() => import("@/pages/blog")),
+  AboutPage: React.lazy(() => import("@/pages/about")),
+} as const;
+
+const getComponent = (componentName: keyof typeof components) => {
+  const Component = components[componentName];
+
+  if (!Component) {
+    throw new Error(`Component "${componentName}" not found`);
+  }
+
+  return Component;
+};
+
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
@@ -7,22 +30,27 @@ export const siteConfig = {
     {
       label: "Trading",
       href: "/",
+      component: getComponent("IndexPage"),
     },
     {
       label: "News",
       href: "/news",
+      component: getComponent("NewsPage"),
     },
     {
       label: "Pricing",
       href: "/pricing",
+      component: getComponent("PricingPage"),
     },
     {
       label: "Blog",
       href: "/blog",
+      component: getComponent("BlogPage"),
     },
     {
       label: "About",
       href: "/about",
+      component: getComponent("AboutPage"),
     },
   ],
   navMenuItems: [

@@ -79,20 +79,7 @@ function generateCandleData(numberOfPoints = 250, endDate: Date) {
       high: candle.high,
       open: candle.open,
       close: candle.close,
-    };
-  });
-}
-
-function generateHistogramData(numberOfPoints = 250, endDate: Date) {
-  const lineData = generateLineData(numberOfPoints, endDate);
-
-  return lineData.map((d) => {
-    const volume = Math.floor(Math.random() * 1000) + 1;
-    const time = getTime(d.time);
-
-    return {
-      time: time,
-      value: volume,
+      value: d.value / 10,
     };
   });
 }
@@ -120,7 +107,7 @@ export class Datafeed {
   }
 
   getVolumeBars(numberOfExtraBars: number | undefined) {
-    const historicalData = generateHistogramData(
+    const historicalData = generateCandleData(
       numberOfExtraBars,
       this._earliestDate,
     );
