@@ -1,7 +1,7 @@
 export const transformAkShareDataToTradingChart = (
   data: BaseAkShareData[],
 ): BaseTradingData[] => {
-  return data.map((item) => ({
+  return data?.map((item) => ({
     time: item.日期,
     symbol: item.股票代码,
     open: item.开盘,

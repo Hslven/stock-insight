@@ -20,7 +20,6 @@ import { useDebounceFn, useMount, useRequest } from "ahooks";
 import { getTradingHistoryData } from "@/api/modules/trading-data";
 import { transformAkShareDataToTradingChart } from "@/lib/transformData";
 import { getMonthsAgoTimestamp, getWeekday } from "@/lib/utils";
-
 function DropdownContent({
   fq,
   setFq,
@@ -106,6 +105,7 @@ export default function TradingView({ symbol }: { symbol: string }) {
     refreshDeps: [monthAgo, activeChart, symbol, fq],
     debounceWait: 300,
     onSuccess: ({ data }) => {
+      console.log(data);
       const akData = transformAkShareDataToTradingChart(data);
 
       setTradingHistory(akData);
@@ -209,7 +209,6 @@ export default function TradingView({ symbol }: { symbol: string }) {
           {/* {activeChart !== "realTime" && (
           )} */}
           <div className="flex gap-2">
-            {/* ? 这里getWeekday会很消耗性能吗，我怎么判断他消不消耗性能呢，是不是存到 map 里好一点 */}
             <span>{`${targetTradingData.time}-${getWeekday(targetTradingData.time)}`}</span>
             <span>{`O:${targetTradingData.open}`}</span>
             <span>{`H:${targetTradingData.high}`}</span>

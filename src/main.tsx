@@ -7,6 +7,7 @@ import { Provider } from "./provider.tsx";
 
 import { Particles } from "@/components/magicui/particles";
 import "@/styles/globals.css";
+import "@/api";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

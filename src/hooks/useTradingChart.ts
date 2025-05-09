@@ -21,7 +21,6 @@
 //     }),
 //     [monthAgo, symbol,period, fq],
 //   );
-
 //   const fqLabel = useMemo(() => {
 //     switch (fq) {
 //       case "qfq":

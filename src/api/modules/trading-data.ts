@@ -1,4 +1,5 @@
-import http from "@/api";
+import { alovaInstance } from "@/api";
+
 const baseURL = import.meta.env.VITE_BASE_URL;
 
 export interface ITradingHistoryProps {
@@ -12,5 +13,5 @@ export interface ITradingHistoryProps {
 export const getTradingHistoryData = (
   params: ITradingHistoryProps,
 ): Promise<ResultData<BaseAkShareData[]>> => {
-  return http.get(`${baseURL}/trading/history`, params);
+  return alovaInstance.Get(`${baseURL}/trading/history`, { params });
 };
