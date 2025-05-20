@@ -17,6 +17,8 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+        hight: 'hsl(var(--hight))', 
+        low: 'hsl(var(--low))', 
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -71,7 +73,8 @@ export default {
         layout: {},
         colors: {}
       },
-    }
+    },
+    
   }),
       require("tailwindcss-animate")
 ],

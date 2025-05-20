@@ -94,3 +94,15 @@ export const getWeekday = (dateString: string) => {
 
   return days[date.getDay()];
 };
+
+/**
+ * 获取 CSS 变量的颜色值
+ * @description tailwindcss 没办法拿到 css 变量的值，只能从元素拿
+ */
+export function getCssColor(varName: string) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(
+    varName,
+  );
+
+  return `hsl(${value.trim()})`;
+}

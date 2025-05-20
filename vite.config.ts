@@ -13,5 +13,6 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/stock/, ""),
       },
     },
+    allowedHosts: ["photo.lven.tech"], // 添加允许的主机
   },
 });

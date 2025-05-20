@@ -24,7 +24,14 @@ export const alovaInstance = createAlova({
     // 第二个参数为当前请求的method实例，你可以用它同步请求前后的配置信息
     onSuccess: async (response, method) => {
       if (response.status >= 400) {
-        throw new Error(response.statusText);
+        addToast({
+          title: "Toast",
+          description: response.statusText,
+          color: "danger",
+        });
+
+        // throw new Error(response.statusText);
+        return Promise.reject(response.statusText);
       }
       const json = await response.json();
 
