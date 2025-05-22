@@ -80,7 +80,7 @@ export const getMonthsAgoTimestamp = (monthsAgo: number): number => {
  * @param dateString 日期字符串（格式：YYYY-MM-DD）
  * @returns 星期几（中文）
  */
-export const getWeekday = (dateString: string) => {
+export const getWeekday = (dateString: string | number) => {
   const date = new Date(dateString);
   const days = [
     "星期日",
@@ -96,8 +96,37 @@ export const getWeekday = (dateString: string) => {
 };
 
 /**
+ * 转时间戳为 yyyy-MM-dd
+ * @param timestamp 时间戳（毫秒）
+ * @returns '2023-10-01'
+ */
+export const formatTimestampToDate = (timestamp: number | string) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * 转时间戳为 HH:mm:ss
+ * @param timestamp 时间戳（毫秒）
+ * @returns 格式化后的时间字符串
+ */
+export const formatTimestampToTime = (timestamp: number | string) => {
+  const date = new Date(timestamp);
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const seconds = date.getSeconds().toString().padStart(2, "0");
+
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+/**
  * 获取 CSS 变量的颜色值
  * @description tailwindcss 没办法拿到 css 变量的值，只能从元素拿
+ * @returns 'hsl(0, 0%, 0%)'
  */
 export function getCssColor(varName: string) {
   const value = getComputedStyle(document.documentElement).getPropertyValue(
@@ -106,3 +135,28 @@ export function getCssColor(varName: string) {
 
   return `hsl(${value.trim()})`;
 }
+
+/**
+ * 获取 CSS 变量的颜色值，并添加透明度
+ * @returns 'rgba(0, 0, 0, alpha)'
+ */
+export const getCssColorWithAlpha = (
+  cssVar: string,
+  alpha: number | string,
+): string => {
+  const color = getCssColor(cssVar);
+
+  // 匹配 HSL 格式的颜色值，例如 "hsl(210, 50%, 50%)"
+  const hslMatch = color.match(/^hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)$/);
+
+  if (hslMatch) {
+    const h = hslMatch[1]; // 色相 (Hue)
+    const s = hslMatch[2]; // 饱和度 (Saturation)
+    const l = hslMatch[3]; // 亮度 (Lightness)
+
+    // 返回带透明度的 HSLA 格式
+    return `hsla(${h}, ${s}%, ${l}%, ${alpha})`;
+  }
+
+  return color;
+};

@@ -25,8 +25,10 @@ export const getTradingHistoryData = (
   return alovaInstance.Get(`${baseURL}/trading/history`, { params });
 };
 
-export const getTradingRealTimeData = (params: {
-  symbol: string;
-}): Promise<ResultData<any[]>> => {
-  return alovaInstance.Get(`${baseURL}/trading/realtime`, { params });
+export const getTradingRealTimeData = (
+  symbol: string,
+): Promise<ResultData<any[]>> => {
+  return alovaInstance.Get(`${baseURL}/trading/realtime`, {
+    params: { symbol },
+  });
 };

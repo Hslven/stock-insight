@@ -9,25 +9,28 @@ import {
   ISeriesApi,
   MouseEventParams,
 } from "lightweight-charts";
-import { Tabs, Tab } from "@heroui/react";
 import { useDebounceFn, useMount, useRequest } from "ahooks";
+import { Spinner } from "@heroui/react";
 
 import { getTradingHistoryData } from "@/api/modules/trading-data";
 import { transformAkShareDataToTradingChart } from "@/lib/transformData";
-import { getCssColor, getMonthsAgoTimestamp, getWeekday } from "@/lib/utils";
+import { getMonthsAgoTimestamp, getWeekday } from "@/lib/utils";
 import PolarityDiv from "@/components/polarity-div";
 import { useTradingStore } from "@/store/useTradingStore";
 
-export default function TradingView({ symbol }: { symbol: string }) {
+export default function TradingView({
+  symbol,
+  period,
+}: {
+  symbol: string;
+  period: "daily" | "weekly" | "monthly";
+}) {
+  const tradingStore = useTradingStore();
   const chartElementRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi>();
   const candlestickSeries = useRef<ISeriesApi<"Candlestick">>();
   const histogramSeries = useRef<ISeriesApi<"Histogram">>();
-  const [fq, setFq] = useState<"" | "qfq" | "hfq">("qfq");
 
-  const [activeChart, setActiveChart] = useState<
-    "daily" | "weekly" | "monthly"
-  >("daily");
   const [targetTradingData, setTargetTradingData] = useState<{
     close: number;
     high: number;
@@ -41,53 +44,94 @@ export default function TradingView({ symbol }: { symbol: string }) {
     open: 0,
     time: "",
   });
-  const [tradingHistory, setTradingHistory] = useState<BaseTradingData[]>();
+  // const [tradingHistory, setTradingHistory] = useState<BaseTradingData[]>();
   // const tradingHistoryRef = useRef<BaseTradingData[]>();
 
-  const [monthAgo, setMonthAgo] = useState(3);
-  const tradingStore = useTradingStore();
-
-  const params = useMemo(() => {
-    return {
-      start_time: getMonthsAgoTimestamp(monthAgo),
-      period: activeChart,
-      symbol: symbol,
-      adjust: fq || undefined,
-    };
-  }, [monthAgo, activeChart, symbol, fq]);
-
+  const [monthAgo, setMonthAgo] = useState(15);
   const { run: setMonthAgoDebounce } = useDebounceFn(
     (month: number) => {
-      setMonthAgo((prev) => prev + month);
+      const monthlyMap = {
+        daily: 1,
+        weekly: 4,
+        monthly: 12,
+      };
+
+      setMonthAgo((prev) => prev + month * monthlyMap[period]);
     },
     { wait: 500 },
   );
 
-  useRequest(() => getTradingHistoryData(params), {
-    refreshDeps: [monthAgo, activeChart, symbol, fq],
-    debounceWait: 300,
-    onSuccess: ({ data }) => {
-      const akData = transformAkShareDataToTradingChart(data);
+  const params = useMemo(() => {
+    const periodMap = {
+      daily: 1,
+      weekly: 4,
+      monthly: 8,
+    };
+    const ago = monthAgo * periodMap[period];
 
-      setTradingHistory(akData);
-      candlestickSeries.current?.setData(akData);
-      // chartRef.current?.timeScale().fitContent();
-      // chartRef.current?.timeScale().setVisibleLogicalRange(vr);
+    return {
+      start_time: getMonthsAgoTimestamp(ago),
+      period: period,
+      symbol: symbol,
+    };
+  }, [monthAgo, period, symbol]);
+
+  /**
+   * 两者的时间相同，不发起新的请求（周期变化除外）
+   */
+  const isFirstRender = useRef(true);
+  const preDataRef = useRef<Date>();
+  const currentDataRef = useRef<Date>();
+  const preActivePeriodRef = useRef<typeof period>();
+  const tradingHistoryRef = useRef<BaseTradingData[]>();
+
+  useRequest(
+    async () => {
+      if (
+        preDataRef.current &&
+        currentDataRef.current &&
+        preDataRef.current.getTime() === currentDataRef.current.getTime() &&
+        preActivePeriodRef.current === period
+      ) {
+        return Promise.resolve();
+      }
+      setLoading(true);
+
+      return await getTradingHistoryData(params);
     },
-  });
-  const chartOptions = {
-    layout: {
-      textColor: "black",
-      background: {
-        type: ColorType.Solid,
-        color: getCssColor("--background"),
+    {
+      refreshDeps: [monthAgo, period, symbol],
+      debounceWait: 300,
+      onSuccess: (response) => {
+        if (!response?.data) return;
+        const { data } = response;
+
+        tradingHistoryRef.current = transformAkShareDataToTradingChart(data);
+
+        candlestickSeries.current?.setData(tradingHistoryRef.current);
+
+        if (tradingHistoryRef.current.length > 0) {
+          const latestTime = new Date(tradingHistoryRef.current[0].time);
+
+          preDataRef.current = currentDataRef.current;
+          currentDataRef.current = latestTime;
+          preActivePeriodRef.current = period;
+        }
+
+        if (isFirstRender.current) {
+          isFirstRender.current = false;
+
+          chartRef.current?.timeScale().setVisibleLogicalRange({
+            from: tradingHistoryRef.current.length - 50,
+            to: tradingHistoryRef.current.length + 10,
+          });
+        }
+        // chartRef.current?.timeScale().fitContent();
+        // chartRef.current?.timeScale().setVisibleLogicalRange(vr);
       },
+      onFinally: () => setLoading(false),
     },
-    autoSize: true,
-    localization: {
-      dateFormat: "yyyy-MM-dd",
-    },
-  };
+  );
 
   const candlestickSeriesOptions = useMemo(
     () => tradingStore.seriesOptions.Candlestick,
@@ -99,7 +143,10 @@ export default function TradingView({ symbol }: { symbol: string }) {
       return;
     }
 
-    chartRef.current = createChart(chartElementRef.current, chartOptions);
+    chartRef.current = createChart(
+      chartElementRef.current,
+      tradingStore.chartOptions,
+    );
     histogramSeries.current = chartRef.current.addSeries(HistogramSeries, {
       color: "#26a69a",
     });
@@ -111,8 +158,7 @@ export default function TradingView({ symbol }: { symbol: string }) {
     const handleRangeChange = (
       logicalRange: { from: number; to: number } | null,
     ) => {
-      // console.log(logicalRange);
-      if (!logicalRange || logicalRange.from >= 0) return;
+      if (!logicalRange || logicalRange.from >= -10) return;
       const month = Math.ceil((logicalRange?.from ?? 1) / 10);
 
       setMonthAgoDebounce(Math.abs(month));
@@ -134,12 +180,12 @@ export default function TradingView({ symbol }: { symbol: string }) {
       .subscribeVisibleLogicalRangeChange(handleRangeChange);
     chartRef.current?.subscribeCrosshairMove(handleCrosshairMove);
 
-    chartRef.current?.timeScale().fitContent();
-
     return () => {
       chartRef.current
         ?.timeScale()
         ?.unsubscribeVisibleLogicalRangeChange(handleRangeChange);
+
+      chartRef.current?.unsubscribeCrosshairMove(handleCrosshairMove);
     };
   });
 
@@ -150,7 +196,7 @@ export default function TradingView({ symbol }: { symbol: string }) {
   );
 
   // 日内收益率
-  const dailyReturn = useMemo(() => {
+  const dayAmplitude = useMemo(() => {
     // 绝对差价
     const absolute = targetTradingData.close - targetTradingData.open;
     const percentage = (absolute / targetTradingData.open) * 100;
@@ -162,9 +208,11 @@ export default function TradingView({ symbol }: { symbol: string }) {
     return percentage.toFixed(2) + "%";
   }, [targetTradingData?.open, targetTradingData?.close]);
 
+  const [loading, setLoading] = useState<boolean>(true);
+
   return (
     <>
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between whitespace-nowrap">
         <div>
           <PolarityDiv signed={dailySpread}>
             <span className="text-3xl">
@@ -172,25 +220,11 @@ export default function TradingView({ symbol }: { symbol: string }) {
             </span>
             <div className="flex">
               <span className="min-w-[55px]">{dailySpread}</span>
-              <span className="min-w-[60px]">{dailyReturn}</span>
-              <span>至今涨幅</span>
+              <span className="min-w-[60px]">{dayAmplitude}</span>
+              {/* <span>至今涨幅</span> */}
             </div>
           </PolarityDiv>
         </div>
-        <Tabs
-          aria-label="Options"
-          radius="none"
-          selectedKey={activeChart}
-          variant="solid"
-          onSelectionChange={(key) =>
-            setActiveChart(key as "daily" | "weekly" | "monthly")
-          }
-        >
-          <Tab key="realTime" title="分时图" />
-          <Tab key="daily" title="日K线" />
-          <Tab key="weekly" title="周K线" />
-          <Tab key="monthly" title="月K线" />
-        </Tabs>
       </div>
       <div className="flex h-full relative">
         <div className="absolute z-10 text-black flex">
@@ -204,49 +238,20 @@ export default function TradingView({ symbol }: { symbol: string }) {
             <span className="min-w-[60px]">{`C:${targetTradingData.close}`}</span>
           </div>
         </div>
-        <div ref={chartElementRef} className="w-full max-h-[900px]" />
+
+        <div className="w-full h-full relative">
+          <div ref={chartElementRef} className="w-full h-full" />
+          {loading && preActivePeriodRef.current !== period && (
+            <>
+              <div className="bg-white/50 absolute left-0 top-0 w-full h-full z-10" />
+              <Spinner
+                className="absolute right-[50%] top-[40%] z-20"
+                color="success"
+              />
+            </>
+          )}
+        </div>
       </div>
     </>
   );
 }
-
-/* 
-function DropdownContent({
-  fq,
-  setFq,
-}: {
-  fq: "" | "qfq" | "hfq";
-  setFq: (key: typeof fq) => void;
-  fqLabel: string;
-}) {
-  const fqLabel = useMemo(() => {
-    switch (fq) {
-      case "qfq":
-        return "前复权";
-      case "hfq":
-        return "后复权";
-      case "":
-        return "不复权";
-      default:
-        return "";
-    }
-  }, [fq]);
-
-  return (
-    <Dropdown>
-      <DropdownTrigger>
-        <Button radius="none" variant="flat">
-          {fqLabel}
-        </Button>
-      </DropdownTrigger>
-      <DropdownMenu onAction={(key) => setFq(key as "" | "qfq" | "hfq")}>
-        <DropdownItem key="qfq">前复权</DropdownItem>
-        <DropdownItem key="hfq">后复权</DropdownItem>
-        <DropdownItem key="">不复权</DropdownItem>
-      </DropdownMenu>
-    </Dropdown>
-  );
-}
-  
-
-*/

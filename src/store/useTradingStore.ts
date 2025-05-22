@@ -7,7 +7,7 @@ import {
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { getCssColor } from "@/lib/utils";
+import { getCssColor, getCssColorWithAlpha } from "@/lib/utils";
 
 interface TradingState {
   chartOptions: DeepPartial<ChartOptions>;
@@ -42,6 +42,17 @@ export const useTradingStore = create<TradingState>()(
           downColor: getCssColor("--low"),
           wickUpColor: getCssColor("--hight"),
           wickDownColor: getCssColor("--low"),
+        },
+        Baseline: {
+          baseValue: { type: "price", price: 12.9 },
+          topLineColor: getCssColor("--hight"),
+          /** 渐变起始填充颜色 */
+          topFillColor1: getCssColorWithAlpha("--hight", "50%"),
+          /** 渐变结束填充颜色 */
+          topFillColor2: getCssColorWithAlpha("--hight", "10%"),
+          bottomLineColor: getCssColor("--low"),
+          bottomFillColor1: getCssColorWithAlpha("--low", "10%"),
+          bottomFillColor2: getCssColorWithAlpha("--low", "50%"),
         },
       },
 

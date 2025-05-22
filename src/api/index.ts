@@ -10,7 +10,7 @@ export const alovaInstance = createAlova({
   statesHook: reactHook,
   timeout: 10e3,
   cacheFor: {
-    GET: 60 * 60 * 1000,
+    // GET: 60 * 60 * 1000,
   },
   requestAdapter: fetchAdapter(),
   beforeRequest: (method) => {
