@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useBaseConfig } from "@/store/useBaseConfig";
 
 export default function PolarityDiv({
   signed,
@@ -8,6 +10,8 @@ export default function PolarityDiv({
   children?: React.ReactNode;
 }) {
   const [isNegativeState, setIsNegativeState] = useState(false);
+  const { theme } = useBaseConfig();
+  const isHideTheme = useMemo(() => theme === "hide", [theme]);
 
   useEffect(() => {
     if (signed) {
@@ -21,7 +25,9 @@ export default function PolarityDiv({
   }, [signed, children]);
 
   return (
-    <div className={`${isNegativeState ? "text-low" : "text-hight"} font-bold`}>
+    <div
+      className={`${isNegativeState ? "text-low" : "text-hight"} font-bold ${isHideTheme && "opacity-20"}`}
+    >
       <div>{children}</div>
     </div>
   );

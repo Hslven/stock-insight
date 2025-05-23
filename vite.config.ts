@@ -6,6 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   server: {
+    host: "127.0.0.1",
     proxy: {
       "/stock": {
         target: "http://127.0.0.1:8000",

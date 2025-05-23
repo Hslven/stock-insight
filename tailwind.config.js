@@ -73,6 +73,11 @@ export default {
         layout: {},
         colors: {}
       },
+      hide:{
+        extend: "dark", // <- inherit default values from dark theme
+        layout:{},
+        colors:{},
+      }
     },
     
   }),

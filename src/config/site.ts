@@ -9,6 +9,7 @@ const components: Record<
   PricingPage: React.lazy(() => import("@/pages/pricing")),
   BlogPage: React.lazy(() => import("@/pages/blog")),
   AboutPage: React.lazy(() => import("@/pages/about")),
+  HiddenPage: React.lazy(() => import("@/pages/hidden/hidden-page")),
 } as const;
 
 const getComponent = (componentName: keyof typeof components) => {
@@ -51,6 +52,11 @@ export const siteConfig = {
       label: "About",
       href: "/about",
       component: getComponent("AboutPage"),
+    },
+    {
+      label: "Hidden",
+      href: "/hidden",
+      component: getComponent("HiddenPage"),
     },
   ],
   navMenuItems: [

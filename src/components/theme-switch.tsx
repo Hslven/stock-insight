@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { useTheme } from "@heroui/use-theme";
 
 import { SunFilledIcon, MoonFilledIcon } from "@/components/icons";
+import { useBaseConfig } from "@/store/useBaseConfig";
 
 export interface ThemeSwitchProps {
   className?: string;
@@ -18,6 +19,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
   const [isMounted, setIsMounted] = useState(false);
 
   const { theme, setTheme } = useTheme();
+  const { setTheme: zusSetTheme } = useBaseConfig();
 
   const {
     Component,
@@ -28,7 +30,10 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     getWrapperProps,
   } = useSwitch({
     isSelected: theme === "light",
-    onChange: () => setTheme(theme === "light" ? "dark" : "light"),
+    onChange: () => {
+      setTheme(theme === "light" ? "hide" : "light");
+      zusSetTheme(theme === "light" ? "hide" : "light");
+    },
   });
 
   useEffect(() => {
@@ -40,7 +45,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
 
   return (
     <Component
-      aria-label={isSelected ? "Switch to dark mode" : "Switch to light mode"}
+      aria-label={isSelected ? "Switch to hide mode" : "Switch to light mode"}
       {...getBaseProps({
         className: clsx(
           "px-px transition-opacity hover:opacity-80 cursor-pointer",

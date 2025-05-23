@@ -2,7 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BaselineSeries,
   CandlestickData,
+  ChartOptions,
+  ColorType,
   createChart,
+  DeepPartial,
   IChartApi,
   ISeriesApi,
   MouseEventParams,
@@ -23,6 +26,7 @@ import {
 import PolarityDiv from "@/components/polarity-div";
 import { useTradingStore } from "@/store/useTradingStore";
 import Clock from "@/components/clock";
+import { useBaseConfig } from "@/store/useBaseConfig";
 
 export default function TradingView({ symbol }: { symbol: string }) {
   const chartElementRef = useRef<HTMLDivElement>(null);
@@ -46,7 +50,8 @@ export default function TradingView({ symbol }: { symbol: string }) {
   // const [tradingHistory, setTradingHistory] = useState<BaseTradingData[]>();
   // const tradingData = useRef<BaseTradingData[]>();
 
-  const tradingStore = useTradingStore();
+  const { chartOptions } = useTradingStore();
+  const { theme } = useBaseConfig();
 
   const tradingData = useRef<any[]>([]);
   const tradingMap = useRef<Map<string, Record<string, any> | string>>(
@@ -61,22 +66,132 @@ export default function TradingView({ symbol }: { symbol: string }) {
     ]),
   );
 
+  const initBaseLineSeriesConfig = (): SeriesPartialOptionsMap["Baseline"] => ({
+    baseValue: { type: "price", price: 0 },
+    // topLineColor: getCssColor("--hight"),
+    // topFillColor1: getCssColorWithAlpha("--hight", "50%"),
+    // topFillColor2: getCssColorWithAlpha("--hight", "10%"),
+    // bottomLineColor: getCssColor("--low"),
+    // bottomFillColor1: getCssColorWithAlpha("--low", "10%"),
+    // bottomFillColor2: getCssColorWithAlpha("--low", "50%"),
+    topLineColor: getCssColorWithAlpha("--foreground", "30%"),
+    topFillColor1: getCssColorWithAlpha("--hight", "0%"),
+    topFillColor2: getCssColorWithAlpha("--hight", "0%"),
+    bottomLineColor: getCssColorWithAlpha("--foreground", "30%"),
+    bottomFillColor1: getCssColorWithAlpha("--low", "0%"),
+    bottomFillColor2: getCssColorWithAlpha("--low", "0%"),
+  });
   const [baselineSeriesOptions, setBaselineSeriesOptions] = useState<
     SeriesPartialOptionsMap["Baseline"]
-  >({
-    baseValue: { type: "price", price: 0 },
-    topLineColor: getCssColor("--hight"),
-    topFillColor1: getCssColorWithAlpha("--hight", "50%"),
-    topFillColor2: getCssColorWithAlpha("--hight", "10%"),
-    bottomLineColor: getCssColor("--low"),
-    bottomFillColor1: getCssColorWithAlpha("--low", "10%"),
-    bottomFillColor2: getCssColorWithAlpha("--low", "50%"),
+  >(initBaseLineSeriesConfig());
+
+  const initChartConfig = (): DeepPartial<ChartOptions> => ({
+    layout: {
+      background: {
+        type: ColorType.Solid,
+        color: getCssColor("--background"),
+      },
+      textColor: "black",
+    },
+    autoSize: true,
+    // grid: {
+    //   vertLines: { color: "#D6DCDE", visible: true },
+    //   horzLines: { color: "#D6DCDE", visible: true },
+    // },
+    grid: {
+      vertLines: {
+        color: "transparent", // 垂直网格线颜色设置为透明
+        visible: false, // 隐藏垂直网格线
+      },
+      horzLines: {
+        color: "transparent", // 水平网格线颜色设置为透明
+        visible: false, // 隐藏水平网格线
+      },
+    },
+    timeScale: {
+      visible: true, // 隐藏 X 轴
+    },
+    rightPriceScale: {
+      visible: true, // 隐藏右侧 Y 轴
+    },
+    leftPriceScale: {
+      visible: false, // 隐藏左侧 Y 轴
+    },
+    localization: {
+      timeFormatter: (timestamp: number) => {
+        const date = new Date(timestamp); // 转换为毫秒
+        const hours = date.getHours().toString().padStart(2, "0");
+        const minutes = date.getMinutes().toString().padStart(2, "0");
+        const seconds = date.getSeconds().toString().padStart(2, "0");
+
+        return `${hours}:${minutes}:${seconds}`;
+      },
+    },
+    // timeScale: {
+    //   tickMarkFormatter: (timestamp: number) => {
+    //     const date = new Date(timestamp); // 转换为毫秒
+    //     const hours = date.getHours().toString().padStart(2, "0");
+    //     const minutes = date.getMinutes().toString().padStart(2, "0");
+
+    //     // 返回精确到分钟的格式
+    //     return `${hours}:${minutes}`;
+    //   },
+    // },
   });
+  const [chartConfigState, setChartConfigState] = useState(initChartConfig());
+
+  const isHideTheme = useMemo(() => theme === "hide", [theme]);
 
   useEffect(() => {
-    // chartRef?.current?.applyOptions(baselineSeriesOptions);
+    if (isHideTheme) {
+      setChartConfigState({
+        ...initChartConfig(),
+        grid: {
+          vertLines: {
+            color: "transparent", // 垂直网格线颜色设置为透明
+            visible: false, // 隐藏垂直网格线
+          },
+          horzLines: {
+            color: "transparent", // 水平网格线颜色设置为透明
+            visible: false, // 隐藏水平网格线
+          },
+        },
+        timeScale: {
+          visible: false, // 隐藏 X 轴
+        },
+        rightPriceScale: {
+          visible: false, // 隐藏右侧 Y 轴
+        },
+        leftPriceScale: {
+          visible: false, // 隐藏左侧 Y 轴
+        },
+      });
+
+      setBaselineSeriesOptions((prev) => ({
+        topLineColor: getCssColorWithAlpha("--hight", "10%"),
+        topFillColor1: getCssColorWithAlpha("--hight", "0%"),
+        topFillColor2: getCssColorWithAlpha("--hight", "0%"),
+        bottomLineColor: getCssColorWithAlpha("--low", "10%"),
+        bottomFillColor1: getCssColorWithAlpha("--low", "0%"),
+        bottomFillColor2: getCssColorWithAlpha("--low", "0%"),
+        baseValue: prev.baseValue,
+      }));
+
+      return;
+    }
+    console.log(initBaseLineSeriesConfig());
+    setChartConfigState(initChartConfig());
+    setBaselineSeriesOptions((prev) => ({
+      ...initBaseLineSeriesConfig(),
+      baseValue: prev.baseValue,
+    }));
+  }, [theme]);
+  useEffect(() => {
     baselineSeries.current?.applyOptions(baselineSeriesOptions);
   }, [baselineSeriesOptions]);
+  useEffect(() => {
+    chartRef.current?.applyOptions(chartConfigState);
+  }, [chartConfigState]);
 
   const errorCount = useRef(0);
   const firstRenderRef = useRef(true);
@@ -166,29 +281,7 @@ export default function TradingView({ symbol }: { symbol: string }) {
       return;
     }
 
-    chartRef.current = createChart(chartElementRef.current, {
-      ...tradingStore.chartOptions,
-      localization: {
-        timeFormatter: (timestamp: number) => {
-          const date = new Date(timestamp); // 转换为毫秒
-          const hours = date.getHours().toString().padStart(2, "0");
-          const minutes = date.getMinutes().toString().padStart(2, "0");
-          const seconds = date.getSeconds().toString().padStart(2, "0");
-
-          return `${hours}:${minutes}:${seconds}`;
-        },
-      },
-      timeScale: {
-        tickMarkFormatter: (timestamp: number) => {
-          const date = new Date(timestamp); // 转换为毫秒
-          const hours = date.getHours().toString().padStart(2, "0");
-          const minutes = date.getMinutes().toString().padStart(2, "0");
-
-          // 返回精确到分钟的格式
-          return `${hours}:${minutes}`;
-        },
-      },
-    });
+    chartRef.current = createChart(chartElementRef.current, chartConfigState);
     // histogramSeries.current = chartRef.current.addSeries(HistogramSeries, {
     //   color: "#26a69a",
     // });
@@ -262,17 +355,17 @@ export default function TradingView({ symbol }: { symbol: string }) {
   return (
     <>
       <div className="flex items-center justify-between whitespace-nowrap w-[73%]">
-        <PolarityDiv signed={dailySpread}>
+        {/* <PolarityDiv signed={dailySpread}>
           <span className="text-3xl">{targetTradingData.close.toFixed(2)}</span>
           <div className="flex">
             <span className="min-w-[55px]">{dailySpread}</span>
             <span className="min-w-[60px]">{dailyReturn}</span>
           </div>
-        </PolarityDiv>
+        </PolarityDiv> */}
         <Clock onMinuteChange={handleMinuteChange} />
       </div>
       <div className="flex h-full relative">
-        <div className="absolute z-10 text-black flex">
+        {/* <div className="absolute z-10 text-black flex">
           <div className="flex gap-2">
             <div
               className={`${targetTradingData.time ? "min-w-[230px]" : "min-w-[130px]"}`}
@@ -288,13 +381,13 @@ export default function TradingView({ symbol }: { symbol: string }) {
             <span className="min-w-[60px]">{`H:${targetTradingData.high}`}</span>
             <span className="min-w-[60px]">{`L:${targetTradingData.low}`}</span>
             <span className="min-w-[60px]">{`C:${targetTradingData.close}`}</span>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
         <div className="w-full h-full relative">
-          <div ref={chartElementRef} className="w-full h-full" />
+          <div ref={chartElementRef} className="w-full h-full opacity-10" />
           {loading && (
             <>
-              <div className="bg-white/50 absolute left-0 top-0 w-full h-full z-10" />
+              <div className="bg-white/50 absolute left-0 top-0 w-full h-full z-10 " />
               <Spinner
                 className="absolute right-[50%] top-[40%] z-20"
                 color="success"
